@@ -107,7 +107,7 @@ app.post("/start-upload", async (req, res) => {
           }
         })
       );
-      console.log(data.Location);
+      return res.status(201).send(data.Location)
   } catch (error) {
     console.log(error.message);
     res.status(500).send("Error saving file.");
