@@ -1,10 +1,12 @@
 const express = require("express");
 const app = express();
 const bodyParser = require("body-parser");
-require ("dotenv").config()
+require("dotenv").config();
 const cors = require("cors");
 const multer = require("multer");
 const upload = require("./aws");
+var FormData = require("form-data");
+var fs = require("fs");
 const aws = require("aws-sdk");
 const { default: axios } = require("axios");
 app.use(
@@ -23,6 +25,84 @@ app.use(
   })
 );
 app.use(multer().any());
+
+// app.post("/start", async (req, res) => {
+//   try {
+//     console.log(req);
+
+
+//     //console.log(form);
+//     // let params = {
+//     // 	Bucket: process.env.AWS_BUCKET_NAME,
+//     // 	Key: req.files[0].originalname,
+//     // 	ContentType: req.files[0].mimetype
+//     // };
+//     // const formData = new FormData();
+//     // return new Promise(
+//     // 	(resolve, reject) => s3.createMultipartUpload(params, (err, uploadData) => {
+//     // 		if (err) {
+//     // 			reject(err);
+//     // 		} else {
+//     //       console.log(uploadData.UploadId)
+//     // 			resolve(res.send({ uploadId: uploadData.UploadId,filename:req.files[0].originalname,fileSize:req.files[0].size}));
+//     // 		}
+//     // 	})
+//     // );
+//   } catch (err) {
+//     console.log(err);
+//     return err;
+//   }
+// });
+
+// app.post("/get-upload-url", async (req, res) => {
+//   try {
+//     let params = {
+//       Bucket: process.env.AWS_BUCKET_NAME,
+//       Key: req.body.fileName,
+//       PartNumber: req.body.partNumber,
+//       UploadId: req.body.uploadId,
+//     };
+
+//     return new Promise((resolve, reject) =>
+//       s3.getSignedUrl("uploadPart", params, (err, presignedUrl) => {
+//         if (err) {
+//           reject(err);
+//         } else {
+//           console.log(presignedUrl);
+//           resolve(res.send({ presignedUrl }));
+//         }
+//       })
+//     );
+//   } catch (err) {
+//     console.log(err);
+//     return err;
+//   }
+// });
+
+// app.post("/complete-upload", async (req, res) => {
+//   try {
+//     let params = {
+//       Bucket: process.env.AWS_BUCKET_NAME,
+//       Key: req.body.params.fileName,
+//       MultipartUpload: {
+//         Parts: req.body.params.parts,
+//       },
+//       UploadId: req.body.params.uploadId,
+//     };
+//     return new Promise((resolve, reject) =>
+//       s3.completeMultipartUpload(params, (err, data) => {
+//         if (err) {
+//           reject(err);
+//         } else {
+//           resolve(res.send(data.Location));
+//         }
+//       })
+//     );
+//   } catch (err) {
+//     console.log(err);
+//     return err;
+//   }
+// });
 
 app.post("/start-upload", async (req, res) => {
   try {
@@ -89,25 +169,25 @@ app.post("/start-upload", async (req, res) => {
         PartNumber: index + 1,
       });
     });
-    	let params2 = {
-        Bucket: process.env.AWS_BUCKET_NAME,
-        Key: req.files[0].originalname,
-        MultipartUpload: {
-          Parts:uploadPartsArray,
-        },
-        UploadId: uploadId,
-      };
-      console.log(params2);
-      const data=await new Promise((resolve, reject) =>
-        s3.completeMultipartUpload(params2, (err, data) => {
-          if (err) {
-            reject(err);
-          } else {
-           return resolve(data );
-          }
-        })
-      );
-      return res.status(201).send(data.Location)
+    let params2 = {
+      Bucket: process.env.AWS_BUCKET_NAME,
+      Key: req.files[0].originalname,
+      MultipartUpload: {
+        Parts: uploadPartsArray,
+      },
+      UploadId: uploadId,
+    };
+    console.log(params2);
+    const data = await new Promise((resolve, reject) =>
+      s3.completeMultipartUpload(params2, (err, data) => {
+        if (err) {
+          reject(err);
+        } else {
+          return resolve(data);
+        }
+      })
+    );
+    return res.status(201).send(data.Location);
   } catch (error) {
     console.log(error.message);
     res.status(500).send("Error saving file.");
@@ -142,8 +222,8 @@ app.post("/save", async (req, res) => {
     var urls = [];
     const data =
       "https://meta-unite-server.s3.ap-south-1.amazonaws.com/news/881D5CE2-1486-4F22-AB45-EA54EBE5DFFD.jpg";
-    
-      // get extension of file
+
+    // get extension of file
     const extension = data.split(".")[data.split(".").length - 1];
     console.log(extension);
     // if (req.files) {
